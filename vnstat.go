@@ -1,12 +1,15 @@
 package main
 
 import (
-	"cowxy2/cmm"
 	"flag"
 	"github.com/helloh2o/lucky/log"
 	"strconv"
 	"strings"
 	"time"
+	"context"
+	"os/exec"
+	"context"
+	"io/ioutil"
 )
 
 var (
@@ -78,46 +81,24 @@ func check() {
 	}
 }
 
-func RunCommand(cmdName string, arg ...string) {
-	cmd := exec.Command(cmdName, arg...)
+func RunCommand(cmdName string, arg ...string) string {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	cmd := exec.CommandContext(ctx,cmdName, arg...)
 	stdout, err := cmd.StdoutPipe()
-	defer stdout.Close()
 	if err != nil {
-		panic(err)
-		return
+		log.Fatal(err)
 	}
+	defer stdout.Close()
 	// run
 	if err := cmd.Start(); err != nil {
-		panic(err)
-		return
+		log.Fatal(err)
 	}
 	// result
 	opBytes, err := ioutil.ReadAll(stdout)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		log.Fatal(err)
 	}
 	log.Println(string(opBytes))
-}
-
-func RunCommandWith(cmdName string, arg ...string) string {
-	cmd := exec.Command(cmdName, arg...)
-	stdout, err := cmd.StdoutPipe()
-	defer stdout.Close()
-	if err != nil {
-		panic(err)
-		return err.Error()
-	}
-	// run
-	if err := cmd.Start(); err != nil {
-		panic(err)
-		return err.Error()
-	}
-	// result
-	opBytes, err := ioutil.ReadAll(stdout)
-	if err != nil {
-		log.Println(err.Error())
-		return err.Error()
-	}
 	return string(opBytes)
 }
