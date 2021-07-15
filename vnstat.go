@@ -35,9 +35,9 @@ func main() {
 
 func check() {
 	if *ver == 1 {
-		cmm.RunCommand("vnstat", "-u")
+		RunCommand("vnstat", "-u")
 	}
-	result := cmm.RunCommandWith("vnstat", *args)
+	result := RunCommandWith("vnstat", *args)
 	lines := strings.Split(result, "\n")
 	switch *args {
 	case "-m":
@@ -76,4 +76,48 @@ func check() {
 	default:
 		log.Release("unhandle result:: %s", result)
 	}
+}
+
+func RunCommand(cmdName string, arg ...string) {
+	cmd := exec.Command(cmdName, arg...)
+	stdout, err := cmd.StdoutPipe()
+	defer stdout.Close()
+	if err != nil {
+		panic(err)
+		return
+	}
+	// run
+	if err := cmd.Start(); err != nil {
+		panic(err)
+		return
+	}
+	// result
+	opBytes, err := ioutil.ReadAll(stdout)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+	log.Println(string(opBytes))
+}
+
+func RunCommandWith(cmdName string, arg ...string) string {
+	cmd := exec.Command(cmdName, arg...)
+	stdout, err := cmd.StdoutPipe()
+	defer stdout.Close()
+	if err != nil {
+		panic(err)
+		return err.Error()
+	}
+	// run
+	if err := cmd.Start(); err != nil {
+		panic(err)
+		return err.Error()
+	}
+	// result
+	opBytes, err := ioutil.ReadAll(stdout)
+	if err != nil {
+		log.Println(err.Error())
+		return err.Error()
+	}
+	return string(opBytes)
 }
