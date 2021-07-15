@@ -83,8 +83,7 @@ func check() {
 
 func RunCommand(cmdName string, arg ...string) string {
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	cmd := exec.CommandContext(ctx,cmdName, arg...)
+	cmd := exec.CommandContext(ctx, cmdName, arg...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -99,6 +98,8 @@ func RunCommand(cmdName string, arg ...string) string {
 	if err != nil {
 		log.Fatal(err)
 	}
+	cancel()
+	cmd.Wait()
 	log.Println(string(opBytes))
 	return string(opBytes)
 }
