@@ -1,15 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"github.com/helloh2o/lucky/log"
+	"io/ioutil"
+	"log"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
-	"context"
-	"os/exec"
-	"context"
-	"io/ioutil"
 )
 
 var (
@@ -22,6 +21,7 @@ var (
 const (
 	GiB = "GiB"
 	MiB = "MiB"
+	TiB = "TiB"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func check() {
 	if *ver == 1 {
 		RunCommand("vnstat", "-u")
 	}
-	result := RunCommandWith("vnstat", *args)
+	result := RunCommand("vnstat", *args)
 	lines := strings.Split(result, "\n")
 	switch *args {
 	case "-m":
@@ -62,14 +62,12 @@ func check() {
 					dw := total[1]
 					switch dw {
 					case GiB:
-						if amount < *max {
-							log.Release("traffic ok, used:: %.2f, left:: %.2f \norigin data::%s", amount, *max-amount, recent)
-						} else {
-							log.Error("oops traffic used up, god!!! exec poweroff cmd now.")
-							cmm.RunCommandWith("poweroff")
-						}
+						checkTr(amount, recent)
+					case TiB:
+						amount = amount * 1024
+						checkTr(amount, recent)
 					default:
-						log.Release("ignore the wd -> %s", dw)
+						log.Printf("ignore the wd -> %s", dw)
 						return
 					}
 				}
@@ -77,7 +75,16 @@ func check() {
 		}
 	case "--json":
 	default:
-		log.Release("unhandle result:: %s", result)
+		log.Printf("unhandle result:: %s", result)
+	}
+}
+
+func checkTr(amount float64, recent string) {
+	if amount < *max {
+		log.Printf("traffic ok, used:: %.2f, left:: %.2f \norigin data::%s", amount, *max-amount, recent)
+	} else {
+		log.Printf("oops traffic used up, god!!! exec poweroff cmd now.")
+		RunCommand("poweroff")
 	}
 }
 
